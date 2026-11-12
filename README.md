@@ -97,124 +97,94 @@ trên tập đánh giá độc lập.
 
 <!-- EXACT_KL_FORMULA_START -->
 
+
 #### 6.2.1. Cơ sở toán học và thay đổi Exact KL
 
-**A. Cơ chế KL trong MAIC gốc**
+**A. Chính sách đa tác tử**
 
-Xét hệ thống gồm $n$ tác tử. Chính sách chung được phân tích thành:
+Với hệ thống gồm n tác tử, chính sách chung được phân tích thành:
 
-$$
-\pi_{\theta}(\mathbf{a}\mid\mathbf{o})
+```math
+\pi_{\theta}(\mathbf a\mid\mathbf o)
 =
 \prod_{i=1}^{n}
 \pi_{\theta_i}(a_i\mid o_i).
-$$
+```
 
-Trong mã MAIC gốc, hệ số surrogate được xây dựng từ log-probability
-của hành động chung:
+Ký hiệu `old` biểu diễn xác suất chính sách được lưu lại
+ở đầu quá trình cập nhật Actor. Đây không phải mạng Actor target.
 
-$$
+**B. Regularization trong MAIC gốc**
+
+Trong mã MAIC gốc, hệ số surrogate của tác tử i là:
+
+```math
 \begin{aligned}
-g_i^{\mathrm{gốc}}
+g_i^{\mathrm{old}}
 ={}&
-(\alpha_1c_H+\lambda)
-\left[\log\pi_{\theta}(\mathbf a\mid\mathbf o)+1\right]\\
+(\alpha_1 c_H+\lambda)
+[\log\pi_{\theta}(\mathbf a\mid\mathbf o)+1]\\
 &-\lambda\log\pi_{\mathrm{old}}(\mathbf a\mid\mathbf o)\\
-&-\widehat A_i
--\alpha_2c_I\widehat I(\mathbf s,\mathbf a).
+&-\widehat A_i-\alpha_2c_I\widehat I,
 \end{aligned}
-$$
+```
 
-Trong đó:
+với hệ số KL:
 
-- $\alpha_1$: hệ số entropy.
-- $\alpha_2$: hệ số Information Gain.
-- $c_H,c_I$: các hệ số điều chỉnh tương ứng.
-- $\lambda=\alpha_{KL}$: hệ số regularization.
-- $\widehat A_i$: advantage của tác tử $i$.
-- $\widehat I$: ước lượng Information Gain.
+```math
+\lambda=\alpha_{\mathrm{KL}}.
+```
 
-Hạng loss cho tác tử $i$ có dạng:
+Hạng Actor loss được tính theo:
 
-$$
-\mathcal L_i^{\mathrm{gốc}}
+```math
+\mathcal L_i^{\mathrm{old}}
 =
-\mathbb E_{\mathcal D}
+\mathbb E_{\mathcal B}
 \left[
-\operatorname{sg}(g_i^{\mathrm{gốc}})
+\operatorname{sg}(g_i^{\mathrm{old}})
 \log\pi_{\theta_i}(a_i\mid o_i)
-\right],
-$$
+\right].
+```
 
-với $\operatorname{sg}$ là phép dừng gradient (`detach`).
+Ở đây, `sg` là phép dừng gradient (`detach`).
 
-Mã MAIC gốc đã tính giá trị KL chính xác để ghi nhận thống kê.
-Tuy nhiên, hạng regularization trong Actor loss sử dụng
-surrogate gradient thay vì lấy đạo hàm trực tiếp từ giá trị KL đó.
+Mã gốc đã tính Exact KL để ghi log, nhưng phần regularization
+trong Actor loss sử dụng một hạng surrogate gradient.
 
-**B. Công thức Exact KL**
+**C. Công thức Exact KL**
 
-Đối với chính sách rời rạc, KL divergence được tính trên toàn bộ
-không gian hành động:
+Đối với chính sách hành động rời rạc:
 
-$$
-\boxed{
+```math
 D_{\mathrm{KL}}
-\left(
-\pi_{\theta_i}\|
-\pi_{\mathrm{old},i}
-\right)
+(\pi_{\theta_i}\|\pi_{\mathrm{old},i})
 =
 \sum_{a\in\mathcal A_i}
 \pi_{\theta_i}(a\mid o_i)
 \log
-\frac{
-\pi_{\theta_i}(a\mid o_i)
-}{
-\pi_{\mathrm{old},i}(a\mid o_i)
-}
-}
-$$
+\frac{\pi_{\theta_i}(a\mid o_i)}
+{\pi_{\mathrm{old},i}(a\mid o_i)}.
+```
 
-Với minibatch $\mathcal B$, hạng regularization mới là:
+Khác với cách lấy mẫu một hành động, phép tính này
+sử dụng xác suất của toàn bộ tập hành động rời rạc.
 
-$$
-\mathcal L_{\mathrm{KL}}^{\mathrm{Exact}}
-=
-\lambda
-\sum_{i=1}^{n}
-\frac{1}{|\mathcal B|}
-\sum_{o_i\in\mathcal B}
-D_{\mathrm{KL}}
-\left(
-\pi_{\theta_i}(\cdot\mid o_i)
-\|
-\pi_{\mathrm{old},i}(\cdot\mid o_i)
-\right).
-$$
+**D. Actor loss sau điều chỉnh**
 
-Chính sách cũ được lưu dưới dạng snapshot và tách khỏi đồ thị
-gradient ở đầu bước cập nhật Actor.
+Sau khi bỏ hạng KL surrogate, hệ số nền trở thành:
 
-**C. Hàm mất mát Actor sau điều chỉnh**
-
-Loại bỏ hạng KL surrogate cũ, ta có hệ số:
-
-$$
+```math
 g_i^{\mathrm{base}}
 =
 \alpha_1 c_H
-\left[
-\log\pi_{\theta}(\mathbf a\mid\mathbf o)+1
-\right]
--\widehat A_i
--\alpha_2c_I\widehat I.
-$$
+[\log\pi_\theta(\mathbf a\mid\mathbf o)+1]
+-\widehat A_i-\alpha_2c_I\widehat I.
+```
 
-Hàm mất mát Actor của biến thể Exact KL:
+Hàm mất mát Actor sử dụng Exact KL trực tiếp:
 
-$$
-\boxed{
+```math
 \begin{aligned}
 \mathcal L_{\mathrm{Actor}}^{\mathrm{ExactKL}}
 ={}&
@@ -225,48 +195,33 @@ $$
 \log\pi_{\theta_i}(a_i\mid o_i)
 \right]\\
 &+
-\lambda
-\sum_{i=1}^{n}
+\lambda\sum_{i=1}^{n}
 \mathbb E_{o_i\sim\mathcal B}
 \left[
 D_{\mathrm{KL}}
-\left(
-\pi_{\theta_i}\|
-\pi_{\mathrm{old},i}
-\right)
+(\pi_{\theta_i}\|\pi_{\mathrm{old},i})
 \right].
 \end{aligned}
-}
-$$
+```
 
-**D. Bản chất thay đổi**
+Trong mã triển khai, hạng KL được cộng vào
+`total_policy_loss` trước khi gọi `backward()`.
+
+**E. So sánh hai phương pháp**
 
 | Thành phần | MAIC gốc | MAIC + Exact KL |
 |---|---|---|
 | Information Gain | Giữ nguyên | Giữ nguyên |
-| Counterfactual advantage | Có | Có |
-| Actor | Chính sách phân tán | Không đổi kiến trúc |
-| KL được ghi log | Exact KL | Exact KL |
+| Counterfactual advantage | Giữ nguyên | Giữ nguyên |
+| Kiến trúc Actor–Critic | MAIC | Không đổi |
+| KL để ghi log | Exact KL | Exact KL |
 | KL trong Actor loss | Surrogate | Exact KL trực tiếp |
-| Gradient regularization | Qua surrogate | Qua tổng KL rời rạc |
+| Gradient của hạng KL | Qua surrogate | Qua phép tính KL đầy đủ |
 
-Biến thể này không thay đổi công thức Information Gain hoặc kiến
-trúc Actor–Critic. Thay đổi chính là cách hạng KL regularization
-tham gia vào quá trình tối ưu chính sách.
-
-**E. Kết quả bước đầu**
-
-Trong thực nghiệm PushBox16 với 10 random seed:
-
-- MAIC gốc: 0/10 seed có reward trung bình dương ở 500 episode cuối.
-- MAIC + Exact KL: 6/10 seed.
-- MASAC gốc: 0/10 seed.
-- MASAC + Exact KL: 1/10 seed.
-
-Các con số trên phản ánh kết quả huấn luyện, không phải tỷ lệ
-thành công khi đánh giá checkpoint trên tập thử nghiệm.
-
-<!-- EXACT_KL_FORMULA_END -->
+**Kết quả thực nghiệm PushBox16:** MAIC + Exact KL có 6/10 seed
+duy trì reward trung bình dương trong 500 episode cuối,
+so với 0/10 của MAIC gốc. Đây là kết quả huấn luyện,
+không phải tỷ lệ thành công trên tập đánh giá độc lập.
 
 #### 6.3. Mở rộng môi trường
 
@@ -278,27 +233,21 @@ Thực nghiệm huấn luyện mở rộng đang tiếp tục được cập nh�
 
 <!-- EXACT_KL_VIDEO_START -->
 
-#### 6.4. Video minh họa MAIC + Exact KL giải thành công PushBox16
+#### 6.4. GIF minh họa ba môi trường 16×16
 
-Video dưới đây minh họa quá trình tương tác của hai tác tử
-trong môi trường PushBox16.
+**Multi-Target 16×16** — MAIC gốc, seed 42, stochastic
 
-| Thông tin | Giá trị |
-|---|---|
-| Thuật toán | MAIC + Exact KL |
-| Môi trường | PushBox16 (16×16) |
-| Random seed | 51 |
-| Checkpoint | Episode 2000 |
-| Chế độ | Greedy |
+![Multi-Target 16×16](assets/demos/mte16_maic_seed42_success.gif)
 
-![MAIC Exact KL PushBox16](assets/demos/pushbox16_exactkl.gif)
+**PushBox 16×16** — MAIC + Exact KL, seed 51, checkpoint 2000, greedy
 
-*Video được tạo từ checkpoint trung gian episode 2000.
-Đây là minh họa một lần thực hiện thành công, không đại diện
-cho tỷ lệ thành công của checkpoint cuối cùng. Trên seed 51,
-chính sách đã suy giảm ở các checkpoint muộn hơn.*
+![PushBox 16×16](assets/demos/pushbox16_exactkl_success.gif)
 
-<!-- EXACT_KL_VIDEO_END -->
+**PassSparse 16×16** — Bộ điều khiển tham chiếu lập trình sẵn (không phải MAIC)
+
+![PassSparse 16×16](assets/demos/passsparse16_reference_scripted.gif)
+
+**Lưu ý:** Các GIF chỉ minh họa một episode hoàn thành, không đại diện cho tỷ lệ thành công tổng quát. Riêng PassSparse sử dụng bộ điều khiển tham chiếu, không phải chính sách được học bằng MAIC.
 
 ### 7. Cấu trúc mã nguồn
 
