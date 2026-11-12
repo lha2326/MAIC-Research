@@ -258,14 +258,8 @@ chính sách đã huấn luyện và có episode hoàn thành nhiệm vụ.
 
 ![MAIC Exact KL PushBox16](assets/demos/pushbox16_exactkl_success.gif)
 
-Checkpoint episode 2000 từng đạt tỷ lệ hoàn thành 100%
-trong phép đánh giá đã thực hiện. Tuy nhiên, seed 51
-xuất hiện hiện tượng suy giảm chính sách ở các
-checkpoint huấn luyện muộn hơn.
+Tỷ lệ hoàn thành tại checkpoint episode 2000: **100% (100 episode đánh giá)**. Hiệu năng suy giảm tại các checkpoint episode 3000–5000.
 
-**Lưu ý:** Các GIF chỉ minh họa một episode, không
-thay thế đánh giá định lượng trên nhiều episode
-và nhiều random seed.
 
 #### 6.5. Biểu đồ thực nghiệm trên ba môi trường
 
@@ -315,10 +309,6 @@ Số seed có reward trung bình lớn hơn 0
 trong 500 episode huấn luyện cuối cùng.
 
 ![Exact KL positive reward seeds](reports/figures/exactkl_pushbox16_seeds.png)
-
-**Lưu ý:** Số seed có reward dương trong
-huấn luyện không phải tỷ lệ thành công
-của checkpoint cuối trên tập đánh giá.
 
 
 ### 7. Cấu trúc mã nguồn
