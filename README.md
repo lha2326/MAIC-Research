@@ -235,27 +235,91 @@ Thực nghiệm huấn luyện mở rộng đang tiếp tục được cập nh�
 
 <!-- EXACT_KL_VIDEO_START -->
 
-#### 6.4. GIF minh họa các môi trường
+#### 6.4. GIF minh họa kết quả mô hình
 
-**Multi-Target 16×16**
+Hai GIF dưới đây được tạo từ checkpoint của các
+chính sách đã huấn luyện và có episode hoàn thành nhiệm vụ.
 
-MAIC gốc — chính sách stochastic
+##### 6.4.1. Multi-Target 16×16 — MAIC gốc
 
-![Multi-Target 16×16](assets/demos/mte16_maic_seed42_success.gif)
+- Thuật toán: MAIC gốc.
+- Seed huấn luyện: 42.
+- Chính sách: Stochastic.
+- Minh họa một episode hoàn thành nhiệm vụ.
 
-**PushBox 16×16**
+![MAIC Multi-Target 16x16](assets/demos/mte16_maic_seed42_success.gif)
 
-MAIC + Exact KL — seed 51, checkpoint 2000, greedy
+##### 6.4.2. PushBox 16×16 — MAIC + Exact KL
 
-![PushBox 16×16](assets/demos/pushbox16_exactkl_success.gif)
+- Thuật toán: MAIC + Exact KL.
+- Seed huấn luyện: 51.
+- Checkpoint: Episode 2000.
+- Chính sách: Greedy.
 
-**PassSparse 16×16**
+![MAIC Exact KL PushBox16](assets/demos/pushbox16_exactkl_success.gif)
 
-Bộ điều khiển tham chiếu lập trình sẵn — không phải MAIC
+Checkpoint episode 2000 từng đạt tỷ lệ hoàn thành 100%
+trong phép đánh giá đã thực hiện. Tuy nhiên, seed 51
+xuất hiện hiện tượng suy giảm chính sách ở các
+checkpoint huấn luyện muộn hơn.
 
-![PassSparse 16×16](assets/demos/passsparse16_reference_scripted.gif)
+**Lưu ý:** Các GIF chỉ minh họa một episode, không
+thay thế đánh giá định lượng trên nhiều episode
+và nhiều random seed.
 
-**Lưu ý:** Các GIF là minh họa riêng lẻ, không đại diện cho tỷ lệ thành công tổng thể. GIF PassSparse là kết quả của bộ điều khiển tham chiếu, không phải chính sách MAIC hay MAIC + Exact KL.
+#### 6.5. Biểu đồ thực nghiệm trên ba môi trường
+
+Các hình dưới đây được tổng hợp từ thực nghiệm
+MAIC, MASAC và MADDPG trên 10 seed (42–51).
+
+##### 6.5.1. Multi-Target 16×16
+
+Biểu đồ phần thưởng huấn luyện và số trạng thái
+được khám phá.
+
+![Learning curves Multi-Target](reports/curves_MTE16.png)
+
+##### 6.5.2. PushBox 16×16
+
+Biểu đồ so sánh quá trình huấn luyện của
+các thuật toán đối chứng.
+
+![Learning curves PushBox](reports/curves_PushBox16.png)
+
+##### 6.5.3. PassSparse 16×16
+
+Biểu đồ thể hiện kết quả khám phá và phần thưởng
+trên nhiệm vụ phối hợp mở cửa.
+
+Không có GIF thành công của chính sách MAIC trên
+PassSparse16 được công bố trong mục này.
+
+![Learning curves PassSparse](reports/curves_PassSparse16.png)
+
+#### 6.6. Phân tích tác động của Exact KL
+
+##### 6.6.1. Đường học trên PushBox16
+
+So sánh MAIC, MASAC, MAIC + Exact KL và
+MASAC + Exact KL.
+
+Các đường biểu diễn trung bình qua 10 seed,
+với trung bình trượt 100 episode và dải
+biến thiên một độ lệch chuẩn.
+
+![Exact KL learning curves](reports/figures/exactkl_pushbox16_learning.png)
+
+##### 6.6.2. Số seed duy trì reward dương
+
+Số seed có reward trung bình lớn hơn 0
+trong 500 episode huấn luyện cuối cùng.
+
+![Exact KL positive reward seeds](reports/figures/exactkl_pushbox16_seeds.png)
+
+**Lưu ý:** Số seed có reward dương trong
+huấn luyện không phải tỷ lệ thành công
+của checkpoint cuối trên tập đánh giá.
+
 
 ### 7. Cấu trúc mã nguồn
 
