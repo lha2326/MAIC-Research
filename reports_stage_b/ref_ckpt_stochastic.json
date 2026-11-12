@@ -1,0 +1,16 @@
+{
+ "env_id": "MultiGrid-MultiTargetEmpty-16x16-v0",
+ "checkpoint": "third_party/MAIC/refactor/model_ep5400.pth",
+ "mode": "stochastic",
+ "eval_seed": 20260,
+ "episodes": 100,
+ "reward_mean": 90.5,
+ "reward_std": 19.615045245933032,
+ "success_rate": 0.81,
+ "length_mean": 21.89,
+ "any_reward_rate": 1.0,
+ "per_agent_positive_rate": [
+  0.91,
+  0.9
+ ]
+}

@@ -1,0 +1,13 @@
+env,algo,seed,episodes,finished,minutes,train_reward_last10pct,train_reward_max_window,unique_states_final,greedy_reward,greedy_success,greedy_agent_pos_rate,stochastic_reward,stochastic_success,stochastic_agent_pos_rate
+MTE16,COMA,42,30,True,0.3,0.0,0.0,723,0.0,0.0,0.00/0.00,0.0,0.0,0.00/0.00
+MTE16,MADDPG,42,30,True,0.2,0.0,5.0,761,3.5,0.0,0.07/0.00,3.5,0.0,0.07/0.00
+MTE16,MAIC,42,30,True,0.6,0.0,0.0,728,0.0,0.0,0.00/0.00,0.0,0.0,0.00/0.00
+MTE16,MASAC,42,30,True,0.5,0.0,5.0,713,0.0,0.0,0.00/0.00,0.0,0.0,0.00/0.00
+PassSparse16,COMA,42,30,True,0.3,0.0,0.0,590,0.0,0.0,0.00/0.00,0.0,0.0,0.00/0.00
+PassSparse16,MADDPG,42,30,True,0.2,0.0,0.0,651,0.0,0.0,0.00/0.00,0.0,0.0,0.00/0.00
+PassSparse16,MAIC,42,30,True,0.4,0.0,0.0,589,0.0,0.0,0.00/0.00,0.0,0.0,0.00/0.00
+PassSparse16,MASAC,42,30,True,0.3,0.0,0.0,596,0.0,0.0,0.00/0.00,0.0,0.0,0.00/0.00
+PushBox16,COMA,42,30,True,0.3,0.0,0.0,611,0.0,0.0,0.00/0.00,0.0,0.0,0.00/0.00
+PushBox16,MADDPG,42,30,True,0.2,0.0,0.0,681,0.0,0.0,0.00/0.00,0.0,0.0,0.00/0.00
+PushBox16,MAIC,42,30,True,0.4,0.0,0.0,619,0.0,0.0,0.00/0.00,0.0,0.0,0.00/0.00
+PushBox16,MASAC,42,30,True,0.3,0.0,0.0,611,0.0,0.0,0.00/0.00,0.0,0.0,0.00/0.00

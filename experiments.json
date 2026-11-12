@@ -1,0 +1,58 @@
+{
+  "maic_repo": "https://github.com/hoangvanphi2004/MAIC",
+  "maic_commit": "ded6164f99742db4769a7f05b45f6e6007ff8b1a",
+  "base_config": "train_config.json",
+  "envs": {
+    "MTE16": "MultiGrid-MultiTargetEmpty-16x16-v0",
+    "PushBox16": "MultiGrid-PushBox-16x16-v0",
+    "PassSparse16": "MultiGrid-PassSparse-16x16-v0"
+  },
+  "algos": {
+    "MAIC": {
+      "runner": "maic",
+      "scaled_information_gain_coef": 1.0,
+      "scaled_entropy_coef": 1.0
+    },
+    "MASAC": {
+      "runner": "maic",
+      "scaled_information_gain_coef": 0.0,
+      "scaled_entropy_coef": 1.0
+    },
+    "COMA": {
+      "runner": "maic",
+      "scaled_information_gain_coef": 0.0,
+      "scaled_entropy_coef": 0.0
+    },
+    "MADDPG": {
+      "runner": "maddpg",
+      "scaled_information_gain_coef": 0.0,
+      "scaled_entropy_coef": 0.0
+    }
+  },
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+  ],
+  "eval": {
+    "episodes": 100,
+    "eval_seed": 20260,
+    "modes": [
+      "greedy",
+      "stochastic"
+    ]
+  },
+  "_notes": [
+    "Moi run = train_config.json goc cua repo, chi thay env_id, seed, hai he so va model_dir.",
+    "MAIC/MASAC/COMA dung dung cong tac he so ma README cua repo mo ta (1/1, 0/1, 0/0).",
+    "COMA o day la ban 'COMA' theo dinh nghia cua repo (off-policy, twin-Q, phat KL), khong phai COMA on-policy cua Foerster et al. 2018.",
+    "MADDPG khong co trong repo; baselines/maddpg.py duoc cam vao dung vong lap train.run_training cua repo."
+  ]
+}

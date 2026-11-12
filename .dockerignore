@@ -1,0 +1,5 @@
+third_party
+runs
+runs_smoke
+reports_smoke
+**/__pycache__

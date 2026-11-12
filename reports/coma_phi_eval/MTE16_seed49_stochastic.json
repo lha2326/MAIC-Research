@@ -1,0 +1,16 @@
+{
+ "env_id": "MultiGrid-MultiTargetEmpty-16x16-v0",
+ "checkpoint": "runs_phi_coma/MTE16/COMA/seed49/model_final.pth",
+ "mode": "stochastic",
+ "eval_seed": 20260,
+ "episodes": 100,
+ "reward_mean": 0.0,
+ "reward_std": 0.0,
+ "success_rate": 0.0,
+ "length_mean": 40.0,
+ "any_reward_rate": 0.0,
+ "per_agent_positive_rate": [
+  0.0,
+  0.0
+ ]
+}

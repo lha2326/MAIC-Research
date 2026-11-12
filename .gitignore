@@ -1,0 +1,61 @@
+# Python cache
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# Credentials
+.env
+.env.*
+!.env.example
+*.pem
+
+# Models
+*.pth
+*.pt
+*.ckpt
+
+# Logs and videos
+*.log
+*.mp4
+*.avi
+
+# Archives
+*.zip
+*.tar.gz
+
+# Raw experiment directories
+runs*/
+runs_diagnostic/
+
+# Temporary files
+.cache/
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+
+# Checkpoints and raw results
+*.pth
+*.pt
+*.ckpt
+*.log
+*.mp4
+*.avi
+*.zip
+*.tar.gz
+runs/
+runs_*/
+backups/
+video_compare/

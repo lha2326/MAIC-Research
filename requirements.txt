@@ -1,0 +1,10 @@
+# Same packages as the MAIC README (gymnasium pinned to 1.1.1 as in the original experiments).
+# PyTorch is installed separately (CUDA build on GPU machines; already present in the Docker base image).
+gymnasium==1.1.1
+numpy
+numba>=0.53
+aenum>=1.3.0
+pygame>=2.2.0
+imageio
+imageio-ffmpeg
+matplotlib

@@ -1,0 +1,4 @@
+env,algo,seed,episodes,finished,minutes,train_reward_last10pct,train_reward_max_window,unique_states_final,greedy_reward,greedy_success,greedy_agent_pos_rate,stochastic_reward,stochastic_success,stochastic_agent_pos_rate
+MTE16,MADDPG,42,5000,True,67.0,45.1,51.0,71450,2.0,0.0,0.03/0.01,7.5,0.0,0.14/0.01
+MTE16,MAIC,42,5000,True,239.3,93.4,100.0,51937,65.5,0.42,0.70/0.61,96.5,0.94,0.98/0.95
+MTE16,MASAC,42,5000,True,143.7,83.6,99.0,50563,82.0,0.64,0.66/0.98,93.5,0.85,0.88/0.99
