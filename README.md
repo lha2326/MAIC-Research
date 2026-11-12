@@ -98,61 +98,62 @@ trên tập đánh giá độc lập.
 <!-- EXACT_KL_FORMULA_START -->
 
 
-#### 6.2.1. Cơ sở toán học và thay đổi Exact KL
+#### 6.2.1. Cơ sở toán học của Exact KL
 
-**A. Chính sách đa tác tử**
+##### A. Chính sách đa tác tử
 
 Với hệ thống gồm n tác tử, chính sách chung được phân tích thành:
 
 ```math
-\pi_{\theta}(\mathbf a\mid\mathbf o)
+\pi_{\theta}(\mathbf{a}\mid\mathbf{o})
 =
-\prod_{i=1}^{n}
-\pi_{\theta_i}(a_i\mid o_i).
+\prod_{i=1}^{n}\pi_{\theta_i}(a_i\mid o_i)
 ```
 
-Ký hiệu `old` biểu diễn xác suất chính sách được lưu lại
-ở đầu quá trình cập nhật Actor. Đây không phải mạng Actor target.
+##### B. Cách tối ưu KL trong MAIC gốc
 
-**B. Regularization trong MAIC gốc**
-
-Trong mã MAIC gốc, hệ số surrogate của tác tử i là:
+Trong mã MAIC gốc, hệ số cập nhật Actor được xây dựng theo:
 
 ```math
 \begin{aligned}
 g_i^{\mathrm{old}}
 ={}&
 (\alpha_1 c_H+\lambda)
-[\log\pi_{\theta}(\mathbf a\mid\mathbf o)+1]\\
+(\log\pi_{\theta}(\mathbf a\mid\mathbf o)+1)\\
 &-\lambda\log\pi_{\mathrm{old}}(\mathbf a\mid\mathbf o)\\
-&-\widehat A_i-\alpha_2c_I\widehat I,
+&-\widehat A_i-\alpha_2c_I\widehat I
 \end{aligned}
 ```
 
-với hệ số KL:
+Trong đó:
 
-```math
-\lambda=\alpha_{\mathrm{KL}}.
-```
+- `alpha1`: hệ số entropy.
+- `alpha2`: hệ số Information Gain.
+- `lambda = alpha_kl`: hệ số KL regularization.
+- `A_i`: counterfactual advantage của tác tử i.
+- `I`: ước lượng Information Gain.
+- `c_H`, `c_I`: hệ số kích hoạt các thành phần tương ứng.
 
-Hạng Actor loss được tính theo:
+Hàm mất mát Actor sử dụng hệ số đã dừng gradient:
 
 ```math
 \mathcal L_i^{\mathrm{old}}
 =
 \mathbb E_{\mathcal B}
 \left[
-\operatorname{sg}(g_i^{\mathrm{old}})
+\mathrm{sg}(g_i^{\mathrm{old}})
 \log\pi_{\theta_i}(a_i\mid o_i)
-\right].
+\right]
 ```
 
-Ở đây, `sg` là phép dừng gradient (`detach`).
+Ký hiệu `sg` biểu diễn thao tác `detach()`.
 
-Mã gốc đã tính Exact KL để ghi log, nhưng phần regularization
-trong Actor loss sử dụng một hạng surrogate gradient.
+Mã MAIC gốc đã tính Exact KL để ghi log. Tuy nhiên,
+hạng regularization trong Actor loss được triển khai
+thông qua surrogate, không lấy gradient trực tiếp từ
+giá trị Exact KL được ghi nhận.
 
-**C. Công thức Exact KL**
+##### C. Công thức Exact KL
 
 Đối với chính sách hành động rời rạc:
 
@@ -164,25 +165,26 @@ D_{\mathrm{KL}}
 \pi_{\theta_i}(a\mid o_i)
 \log
 \frac{\pi_{\theta_i}(a\mid o_i)}
-{\pi_{\mathrm{old},i}(a\mid o_i)}.
+{\pi_{\mathrm{old},i}(a\mid o_i)}
 ```
 
-Khác với cách lấy mẫu một hành động, phép tính này
-sử dụng xác suất của toàn bộ tập hành động rời rạc.
+Khác với cách chỉ sử dụng hành động có trong minibatch,
+công thức trên tính tổng theo toàn bộ không gian
+hành động rời rạc của mỗi tác tử.
 
-**D. Actor loss sau điều chỉnh**
+##### D. Hàm mất mát Actor mới
 
-Sau khi bỏ hạng KL surrogate, hệ số nền trở thành:
+Sau khi loại bỏ hạng KL surrogate cũ:
 
 ```math
 g_i^{\mathrm{base}}
 =
 \alpha_1 c_H
-[\log\pi_\theta(\mathbf a\mid\mathbf o)+1]
--\widehat A_i-\alpha_2c_I\widehat I.
+(\log\pi_{\theta}(\mathbf a\mid\mathbf o)+1)
+-\widehat A_i-\alpha_2c_I\widehat I
 ```
 
-Hàm mất mát Actor sử dụng Exact KL trực tiếp:
+Hàm mất mát Actor của biến thể Exact KL:
 
 ```math
 \begin{aligned}
@@ -191,37 +193,37 @@ Hàm mất mát Actor sử dụng Exact KL trực tiếp:
 \sum_{i=1}^{n}
 \mathbb E_{\mathcal B}
 \left[
-\operatorname{sg}(g_i^{\mathrm{base}})
+\mathrm{sg}(g_i^{\mathrm{base}})
 \log\pi_{\theta_i}(a_i\mid o_i)
 \right]\\
 &+
 \lambda\sum_{i=1}^{n}
-\mathbb E_{o_i\sim\mathcal B}
+\mathbb E_{\mathcal B}
 \left[
 D_{\mathrm{KL}}
 (\pi_{\theta_i}\|\pi_{\mathrm{old},i})
-\right].
+\right]
 \end{aligned}
 ```
 
-Trong mã triển khai, hạng KL được cộng vào
-`total_policy_loss` trước khi gọi `backward()`.
+Chính sách cũ được lưu dưới dạng snapshot không nhận gradient.
+Hạng Exact KL được cộng trực tiếp vào `total_policy_loss`
+trước khi thực hiện `backward()`.
 
-**E. So sánh hai phương pháp**
+##### E. So sánh trước và sau thay đổi
 
 | Thành phần | MAIC gốc | MAIC + Exact KL |
 |---|---|---|
-| Information Gain | Giữ nguyên | Giữ nguyên |
-| Counterfactual advantage | Giữ nguyên | Giữ nguyên |
-| Kiến trúc Actor–Critic | MAIC | Không đổi |
-| KL để ghi log | Exact KL | Exact KL |
+| Information Gain | Không đổi | Không đổi |
+| Counterfactual advantage | Có | Có |
+| Kiến trúc Actor–Critic | MAIC | MAIC |
+| Giá trị KL để ghi log | Exact KL | Exact KL |
 | KL trong Actor loss | Surrogate | Exact KL trực tiếp |
-| Gradient của hạng KL | Qua surrogate | Qua phép tính KL đầy đủ |
+| Gradient KL | Thông qua surrogate | Đạo hàm hạng KL đầy đủ |
 
-**Kết quả thực nghiệm PushBox16:** MAIC + Exact KL có 6/10 seed
-duy trì reward trung bình dương trong 500 episode cuối,
-so với 0/10 của MAIC gốc. Đây là kết quả huấn luyện,
-không phải tỷ lệ thành công trên tập đánh giá độc lập.
+**Bản chất cải tiến:** thay đổi cách regularization KL
+tham gia vào tối ưu chính sách, không thay đổi công thức
+Information Gain hoặc kiến trúc MAIC.
 
 #### 6.3. Mở rộng môi trường
 
@@ -233,21 +235,27 @@ Thực nghiệm huấn luyện mở rộng đang tiếp tục được cập nh�
 
 <!-- EXACT_KL_VIDEO_START -->
 
-#### 6.4. GIF minh họa ba môi trường 16×16
+#### 6.4. GIF minh họa các môi trường
 
-**Multi-Target 16×16** — MAIC gốc, seed 42, stochastic
+**Multi-Target 16×16**
+
+MAIC gốc — chính sách stochastic
 
 ![Multi-Target 16×16](assets/demos/mte16_maic_seed42_success.gif)
 
-**PushBox 16×16** — MAIC + Exact KL, seed 51, checkpoint 2000, greedy
+**PushBox 16×16**
+
+MAIC + Exact KL — seed 51, checkpoint 2000, greedy
 
 ![PushBox 16×16](assets/demos/pushbox16_exactkl_success.gif)
 
-**PassSparse 16×16** — Bộ điều khiển tham chiếu lập trình sẵn (không phải MAIC)
+**PassSparse 16×16**
+
+Bộ điều khiển tham chiếu lập trình sẵn — không phải MAIC
 
 ![PassSparse 16×16](assets/demos/passsparse16_reference_scripted.gif)
 
-**Lưu ý:** Các GIF chỉ minh họa một episode hoàn thành, không đại diện cho tỷ lệ thành công tổng quát. Riêng PassSparse sử dụng bộ điều khiển tham chiếu, không phải chính sách được học bằng MAIC.
+**Lưu ý:** Các GIF là minh họa riêng lẻ, không đại diện cho tỷ lệ thành công tổng thể. GIF PassSparse là kết quả của bộ điều khiển tham chiếu, không phải chính sách MAIC hay MAIC + Exact KL.
 
 ### 7. Cấu trúc mã nguồn
 
