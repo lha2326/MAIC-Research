@@ -1,0 +1,14 @@
+{
+  "env": "PassSparse16",
+  "algo": "MAIC_ExactKL",
+  "train_seed": 42,
+  "checkpoint": "/workspace/MAIC-Research/runs_study16/PassSparse16/MAIC_ExactKL/seed42/model_final.pth",
+  "mode": "greedy",
+  "eval_seed": 20261,
+  "success": false,
+  "reward": 0.0,
+  "steps": 40,
+  "source": "actual policy rollout; NOT a scripted demonstration",
+  "gif": "/workspace/MAIC-Research/reports_study16/videos/PassSparse16_MAIC_ExactKL_trainseed42_greedy_evalseed20261_FAILURE.gif",
+  "mp4": "/workspace/MAIC-Research/reports_study16/videos/PassSparse16_MAIC_ExactKL_trainseed42_greedy_evalseed20261_FAILURE.mp4"
+}

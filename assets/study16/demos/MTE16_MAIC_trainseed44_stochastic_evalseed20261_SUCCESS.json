@@ -1,0 +1,14 @@
+{
+  "env": "MTE16",
+  "algo": "MAIC",
+  "train_seed": 44,
+  "checkpoint": "/workspace/MAIC-Research/runs_study16/MTE16/MAIC/seed44/model_final.pth",
+  "mode": "stochastic",
+  "eval_seed": 20261,
+  "success": true,
+  "reward": 100.0,
+  "steps": 33,
+  "source": "actual policy rollout; NOT a scripted demonstration",
+  "gif": "/workspace/MAIC-Research/reports_study16/videos/MTE16_MAIC_trainseed44_stochastic_evalseed20261_SUCCESS.gif",
+  "mp4": "/workspace/MAIC-Research/reports_study16/videos/MTE16_MAIC_trainseed44_stochastic_evalseed20261_SUCCESS.mp4"
+}

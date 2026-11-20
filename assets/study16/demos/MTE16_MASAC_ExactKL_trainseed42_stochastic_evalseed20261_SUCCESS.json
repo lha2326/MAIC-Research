@@ -1,0 +1,14 @@
+{
+  "env": "MTE16",
+  "algo": "MASAC_ExactKL",
+  "train_seed": 42,
+  "checkpoint": "/workspace/MAIC-Research/runs_study16/MTE16/MASAC_ExactKL/seed42/model_final.pth",
+  "mode": "stochastic",
+  "eval_seed": 20261,
+  "success": true,
+  "reward": 100.0,
+  "steps": 35,
+  "source": "actual policy rollout; NOT a scripted demonstration",
+  "gif": "/workspace/MAIC-Research/reports_study16/videos/MTE16_MASAC_ExactKL_trainseed42_stochastic_evalseed20261_SUCCESS.gif",
+  "mp4": "/workspace/MAIC-Research/reports_study16/videos/MTE16_MASAC_ExactKL_trainseed42_stochastic_evalseed20261_SUCCESS.mp4"
+}

@@ -1,339 +1,119 @@
-# MAIC-Research
+# Policy KL Regularization in Cooperative Multi-Agent Reinforcement Learning
 
-## Tăng cường khả năng khám phá trong học tăng cường đa tác tử dựa trên Information Gain
+**MAIC replication and controlled Exact-KL ablation on 16 × 16 environments**
 
-### 1. Tổng quan
+This repository studies policy KL regularization in information-gain-based cooperative multi-agent reinforcement learning (MARL). The main experimental comparison retains the MAIC architecture and its information-gain estimator, changing only how the discrete-action KL penalty contributes to the actor gradient. Related baselines distinguish the effect of information gain from the effect of KL regularization.
 
-Dự án nghiên cứu khả năng khám phá trong học tăng cường đa tác tử hợp tác
-(Cooperative Multi-Agent Reinforcement Learning – MARL), tập trung vào phương
-pháp MAIC sử dụng Information Gain để định hướng quá trình khám phá môi trường.
+The research is based on [Hoàng Văn Phi's MAIC implementation](https://github.com/hoangvanphi2004/MAIC) (source revision: `ded6164f99742db4769a7f05b45f6e6007ff8b1a`). The Exact-KL treatment should be understood as a controlled modification, **not** a new information-gain estimator, a new MARL architecture, or a guarantee of policy improvement.
 
-Nghiên cứu bao gồm tái hiện kết quả MAIC, phân tích tính ổn định của
-quá trình tối ưu chính sách, thử nghiệm Exact KL và đánh giá khả năng
-mở rộng trên các môi trường có kích thước khác nhau.
+## Experimental protocol
 
-### 2. Mục tiêu
+| Property | Configuration |
+|:--|:--|
+| Environments | Multi-Target (MTE16), PushBox16, PassSparse16 |
+| Grid size | 16 × 16 |
+| Agents / episode horizon | 2 / 40 steps |
+| Methods | MAIC, MAIC + Exact KL, MASAC, MASAC + Exact KL, MADDPG, COMA-configured MAIC |
+| Training seeds | 42–46 (5 seeds per configuration) |
+| Training budget | 10,000 episodes per run |
+| Total runs | **90 (3 × 6 × 5)** |
+| Evaluation | Greedy and stochastic; 100 episodes per checkpoint/seed/mode |
+| Final-checkpoint evaluations | **180 JSON records (90 × 2)** |
 
-- Tái hiện thực nghiệm MAIC và các thuật toán đối chứng.
-- Phân tích vai trò của Information Gain trong khám phá.
-- Kiểm tra ảnh hưởng của Exact KL đến quá trình học.
-- Đánh giá tính ổn định của chính sách qua nhiều random seed.
-- Kiểm chứng hiệu quả trên môi trường 16×16, 24×24 và 32×32.
+Each row in the following table is the **mean of five per-seed final-checkpoint success rates**. It is not the success rate of a single policy. Detailed per-seed values and standard deviations are reported in [Results](docs/study16/RESULTS_EN.md).
 
-### 3. Mã nguồn kế thừa
+## Final-checkpoint task success
 
-Dự án được phát triển trên cơ sở mã nguồn MAIC của Hoàng Văn Phi.
+| Method | MTE16 greedy | MTE16 stochastic | PushBox16 stochastic | PassSparse16 stochastic |
+|:--|--:|--:|--:|--:|
+| MAIC | 9.8% | 41.4% | 0.0% | 0.0% |
+| MAIC + Exact KL | 25.6% | 37.8% | 60.0% | 0.0% |
+| MASAC | 7.2% | 17.4% | 0.0% | 0.0% |
+| MASAC + Exact KL | 37.2% | 44.2% | 0.0% | 0.0% |
+| MADDPG | 4.6% | 13.4% | 60.0% | 0.0% |
+| COMA-configured MAIC | 0.0% | 0.0% | 0.0% | 0.0% |
 
-Repository gốc:
-https://github.com/hoangvanphi2004/MAIC
+The strongest contrast on PushBox16 is **MAIC: 0/5 successful seeds versus MAIC + Exact KL: 3/5 successful seeds**, with the same 60% seed-average success as MADDPG (3/5). On MTE16, Exact KL improves greedy MAIC success (9.8% → 25.6%), while stochastic MAIC success decreases slightly (41.4% → 37.8%). MASAC + Exact KL yields higher mean success than MASAC on both MTE16 evaluation modes. All methods obtain zero final evaluation success on PassSparse16.
 
-Phiên bản mã gốc được ghi nhận trong:
-docs/phi_source_commit.txt
+**Statistical qualification.** Five seeds are insufficient to establish robust superiority. The paired, two-sided exact sign-flip test for the PushBox16 MAIC contrast yields `p = 0.25`; observed differences are descriptive, not a statistically significant demonstration of improvement at the 5% level. The definition of `unique_states_final` is implementation-specific and must not be interpreted as task success.
 
-Các mã nguồn kế thừa và những thành phần triển khai bổ sung được phân biệt
-trong tài liệu nghiên cứu.
+## Main figures
 
-### 4. Thuật toán
+Figures use restrained grayscale styling. Dots and thin lines represent seeds; means are shown separately. Raw evaluation data, rather than inferred values from old figures, underlie these plots.
 
-| Thuật toán | Vai trò |
-|---|---|
-| MAIC | Phương pháp sử dụng Information Gain |
-| MASAC | Đối chứng không sử dụng Information Gain |
-| MADDPG | Thuật toán đối chứng |
-| COMA-configured MAIC | Cấu hình IG=0 và entropy=0 theo mã Phi |
-| MAIC + Exact KL | Biến thể nghiên cứu cơ chế KL |
-| MASAC + Exact KL | Đối chứng cho biến thể Exact KL |
+**MTE16 — final task success**
 
-Lưu ý: COMA-configured MAIC không được đồng nhất với triển khai
-COMA on-policy nguyên bản.
+![MTE16 task success](assets/study16/figures/MTE16_success_greedy_stochastic.png)
 
-### 5. Môi trường thực nghiệm
+**MTE16 — paired seed comparison**
 
-- Multi-Target: khám phá và thu thập mục tiêu.
-- PushBox: đẩy hộp trong môi trường hợp tác.
-- PassSparse: phối hợp kích hoạt công tắc và di chuyển qua cửa.
+![MTE16 paired seed comparison](assets/study16/figures/MTE16_paired_seed_response.png)
 
-Các kích thước nghiên cứu:
+**PushBox16 — success by training seed**
 
-| Kích thước | Horizon |
-|---|---:|
-| 16×16 | 40 |
-| 24×24 | 60 |
-| 32×32 | 80 |
+![PushBox16 seed-wise success](assets/study16/figures/PushBox16_success_per_seed.png)
 
-### 6. Thực nghiệm
+**PassSparse16 — recorded state diversity**
 
-#### 6.1. Tái hiện trên môi trường 16×16
+![PassSparse16 recorded unique states](assets/study16/figures/PassSparse16_unique_states_final.png)
 
-Các thuật toán MAIC, MASAC và MADDPG được huấn luyện trên
-10 random seed từ 42 đến 51.
+All available PNG and vector PDF plots are located in [`assets/study16/figures/`](assets/study16/figures/). See [figure notes](docs/study16/FIGURES_AND_DEMOS.md) for data definitions and intended interpretation.
 
-Cấu hình COMA theo mã nguồn Phi cũng đã hoàn thành
-30 run, mỗi run 5.000 episode.
+## Policy rollouts
 
-Kết quả đánh giá COMA-configured MAIC:
+<!-- STUDY16_DEMOS_START -->
+The following examples were recorded from trained-policy checkpoints; each represents a **single episode**, not the average success rate.
 
-| Môi trường | Greedy success | Stochastic success |
-|---|---:|---:|
-| Multi-Target | 0% | 0% |
-| PushBox | 0% | 0% |
-| PassSparse | 0% | 0% |
+| Run and evaluation metadata | Outcome | Media |
+|:--|:--|:--|
+| `MTE16_MAIC_trainseed44_stochastic_evalseed20261_SUCCESS` | Successful episode | [GIF](assets/study16/demos/MTE16_MAIC_trainseed44_stochastic_evalseed20261_SUCCESS.gif)  [MP4](assets/study16/demos/MTE16_MAIC_trainseed44_stochastic_evalseed20261_SUCCESS.mp4) |
+| `MTE16_MASAC_ExactKL_trainseed42_stochastic_evalseed20261_SUCCESS` | Successful episode | [GIF](assets/study16/demos/MTE16_MASAC_ExactKL_trainseed42_stochastic_evalseed20261_SUCCESS.gif)  [MP4](assets/study16/demos/MTE16_MASAC_ExactKL_trainseed42_stochastic_evalseed20261_SUCCESS.mp4) |
+| `PassSparse16_MAIC_ExactKL_trainseed42_greedy_evalseed20261_FAILURE` | Unsuccessful episode | [GIF](assets/study16/demos/PassSparse16_MAIC_ExactKL_trainseed42_greedy_evalseed20261_FAILURE.gif)  [MP4](assets/study16/demos/PassSparse16_MAIC_ExactKL_trainseed42_greedy_evalseed20261_FAILURE.mp4) |
+| `PushBox16_MADDPG_trainseed45_greedy_evalseed20261_SUCCESS` | Successful episode | [GIF](assets/study16/demos/PushBox16_MADDPG_trainseed45_greedy_evalseed20261_SUCCESS.gif)  [MP4](assets/study16/demos/PushBox16_MADDPG_trainseed45_greedy_evalseed20261_SUCCESS.mp4) |
+| `PushBox16_MAIC_ExactKL_trainseed46_greedy_evalseed20261_SUCCESS` | Successful episode | [GIF](assets/study16/demos/PushBox16_MAIC_ExactKL_trainseed46_greedy_evalseed20261_SUCCESS.gif)  [MP4](assets/study16/demos/PushBox16_MAIC_ExactKL_trainseed46_greedy_evalseed20261_SUCCESS.mp4) |
 
-Các giá trị trên được tính từ 10 seed, mỗi seed được đánh giá
-100 episode cho mỗi chế độ.
+Companion `.json` records and further descriptions are in [Figures and demonstrations](docs/study16/FIGURES_AND_DEMOS.md).
+<!-- STUDY16_DEMOS_END -->
 
-#### 6.2. Phân tích Exact KL
+## Reproducing the experiments
 
-Thực nghiệm MAIC + Exact KL và MASAC + Exact KL
-trên PushBox16 với 10 random seed.
+The original MAIC source revision and modified Exact-KL variant are kept distinct. All comparison conditions use the same environment implementations, observation/state mode, training horizon, and evaluation protocol. `COMA_Phi` means MAIC configured with IG = 0 and entropy = 0; **it is not a standalone on-policy COMA implementation**.
 
-Kết quả huấn luyện cho thấy 6/10 seed MAIC + Exact KL
-có reward trung bình dương trong 500 episode cuối,
-so với 1/10 seed của MASAC + Exact KL.
-
-Đây là kết quả huấn luyện, không đồng nghĩa với tỷ lệ thành công
-trên tập đánh giá độc lập.
-
-
-<!-- EXACT_KL_FORMULA_START -->
-
-
-#### 6.2.1. Cơ sở toán học của Exact KL
-
-##### A. Chính sách đa tác tử
-
-Với hệ thống gồm n tác tử, chính sách chung được phân tích thành:
-
-```math
-\pi_{\theta}(\mathbf{a}\mid\mathbf{o})
-=
-\prod_{i=1}^{n}\pi_{\theta_i}(a_i\mid o_i)
+```bash
+# From repository root, after installing dependencies and the pinned source:
+python3 study16_pipeline.py prepare
+python3 study16_pipeline.py train --jobs 2
+python3 study16_pipeline.py status
+python3 study16_pipeline.py eval --jobs 2
+python3 study16_pipeline.py summarize
 ```
 
-##### B. Cách tối ưu KL trong MAIC gốc
+**Do not rerun `train --retry-failed` on a directory with partial runs unless you intend to archive and restart those runs.** The checkpoint files do not contain enough optimizer and replay-buffer state for an exact resume. See [Reproducibility](docs/study16/REPRODUCIBILITY.md) and [Study16 setup](SETUP_STUDY16.md).
 
-Trong mã MAIC gốc, hệ số cập nhật Actor được xây dựng theo:
+## Repository organization
 
-```math
-\begin{aligned}
-g_i^{\mathrm{old}}
-={}&
-(\alpha_1 c_H+\lambda)
-(\log\pi_{\theta}(\mathbf a\mid\mathbf o)+1)\\
-&-\lambda\log\pi_{\mathrm{old}}(\mathbf a\mid\mathbf o)\\
-&-\widehat A_i-\alpha_2c_I\widehat I
-\end{aligned}
+```text
+baselines/                        Reference baselines, including MADDPG
+third_party/MAIC/                 Original source snapshot (existing research material)
+variants/exactkl/                 Exact-KL actor-loss modification
+study16_pipeline.py               Reproduction and evaluation runner
+scripts/study16/                  Research-quality figure generation
+results/study16/                  90-row per-seed data and 18-row summary
+assets/study16/figures/           Journal-style PNG and vector PDF figures
+assets/study16/demos/             Selected rollout GIFs and JSON metadata
+docs/study16/                     Study design, analysis and limitations
 ```
 
-Trong đó:
+Previous exploratory experiments remain in their original directories. **Do not combine their 5,000-episode/10-seed statistics with this 10,000-episode/5-seed study.** The complete checkpoint collection and raw logs should be archived outside standard Git history (for example, as verified GitHub Release assets); no external archive is claimed as published until its upload is confirmed.
 
-- `alpha1`: hệ số entropy.
-- `alpha2`: hệ số Information Gain.
-- `lambda = alpha_kl`: hệ số KL regularization.
-- `A_i`: counterfactual advantage của tác tử i.
-- `I`: ước lượng Information Gain.
-- `c_H`, `c_I`: hệ số kích hoạt các thành phần tương ứng.
+## Documentation
 
-Hàm mất mát Actor sử dụng hệ số đã dừng gradient:
+- [Results and limitations (English)](docs/study16/RESULTS_EN.md)
+- [Kết quả và diễn giải (Tiếng Việt)](docs/study16/KET_QUA_TV.md)
+- [Reproducibility and checkpoint provenance](docs/study16/REPRODUCIBILITY.md)
+- [Figures and policy demonstrations](docs/study16/FIGURES_AND_DEMOS.md)
+- [Original MAIC source](https://github.com/hoangvanphi2004/MAIC)
 
-```math
-\mathcal L_i^{\mathrm{old}}
-=
-\mathbb E_{\mathcal B}
-\left[
-\mathrm{sg}(g_i^{\mathrm{old}})
-\log\pi_{\theta_i}(a_i\mid o_i)
-\right]
-```
+## Attribution and scope
 
-Ký hiệu `sg` biểu diễn thao tác `detach()`.
-
-Mã MAIC gốc đã tính Exact KL để ghi log. Tuy nhiên,
-hạng regularization trong Actor loss được triển khai
-thông qua surrogate, không lấy gradient trực tiếp từ
-giá trị Exact KL được ghi nhận.
-
-##### C. Công thức Exact KL
-
-Đối với chính sách hành động rời rạc:
-
-```math
-D_{\mathrm{KL}}
-(\pi_{\theta_i}\|\pi_{\mathrm{old},i})
-=
-\sum_{a\in\mathcal A_i}
-\pi_{\theta_i}(a\mid o_i)
-\log
-\frac{\pi_{\theta_i}(a\mid o_i)}
-{\pi_{\mathrm{old},i}(a\mid o_i)}
-```
-
-Khác với cách chỉ sử dụng hành động có trong minibatch,
-công thức trên tính tổng theo toàn bộ không gian
-hành động rời rạc của mỗi tác tử.
-
-##### D. Hàm mất mát Actor mới
-
-Sau khi loại bỏ hạng KL surrogate cũ:
-
-```math
-g_i^{\mathrm{base}}
-=
-\alpha_1 c_H
-(\log\pi_{\theta}(\mathbf a\mid\mathbf o)+1)
--\widehat A_i-\alpha_2c_I\widehat I
-```
-
-Hàm mất mát Actor của biến thể Exact KL:
-
-```math
-\begin{aligned}
-\mathcal L_{\mathrm{Actor}}^{\mathrm{ExactKL}}
-={}&
-\sum_{i=1}^{n}
-\mathbb E_{\mathcal B}
-\left[
-\mathrm{sg}(g_i^{\mathrm{base}})
-\log\pi_{\theta_i}(a_i\mid o_i)
-\right]\\
-&+
-\lambda\sum_{i=1}^{n}
-\mathbb E_{\mathcal B}
-\left[
-D_{\mathrm{KL}}
-(\pi_{\theta_i}\|\pi_{\mathrm{old},i})
-\right]
-\end{aligned}
-```
-
-Chính sách cũ được lưu dưới dạng snapshot không nhận gradient.
-Hạng Exact KL được cộng trực tiếp vào `total_policy_loss`
-trước khi thực hiện `backward()`.
-
-##### E. So sánh trước và sau thay đổi
-
-| Thành phần | MAIC gốc | MAIC + Exact KL |
-|---|---|---|
-| Information Gain | Không đổi | Không đổi |
-| Counterfactual advantage | Có | Có |
-| Kiến trúc Actor–Critic | MAIC | MAIC |
-| Giá trị KL để ghi log | Exact KL | Exact KL |
-| KL trong Actor loss | Surrogate | Exact KL trực tiếp |
-| Gradient KL | Thông qua surrogate | Đạo hàm hạng KL đầy đủ |
-
-**Bản chất cải tiến:** thay đổi cách regularization KL
-tham gia vào tối ưu chính sách, không thay đổi công thức
-Information Gain hoặc kiến trúc MAIC.
-
-#### 6.3. Mở rộng môi trường
-
-Các môi trường 24×24 và 32×32 đã được kiểm tra
-về khả năng khởi tạo và chạy thử.
-
-Thực nghiệm huấn luyện mở rộng đang tiếp tục được cập nhật.
-
-
-<!-- EXACT_KL_VIDEO_START -->
-
-#### 6.4. GIF minh họa kết quả mô hình
-
-Hai GIF dưới đây được tạo từ checkpoint của các
-chính sách đã huấn luyện và có episode hoàn thành nhiệm vụ.
-
-##### 6.4.1. Multi-Target 16×16 — MAIC gốc
-
-- Thuật toán: MAIC gốc.
-- Seed huấn luyện: 42.
-- Chính sách: Stochastic.
-- Minh họa một episode hoàn thành nhiệm vụ.
-
-![MAIC Multi-Target 16x16](assets/demos/mte16_maic_seed42_success.gif)
-
-##### 6.4.2. PushBox 16×16 — MAIC + Exact KL
-
-- Thuật toán: MAIC + Exact KL.
-- Seed huấn luyện: 51.
-- Checkpoint: Episode 2000.
-- Chính sách: Greedy.
-
-![MAIC Exact KL PushBox16](assets/demos/pushbox16_exactkl_success.gif)
-
-Tỷ lệ hoàn thành tại checkpoint episode 2000: **100% (100 episode đánh giá)**. Hiệu năng suy giảm tại các checkpoint episode 3000–5000.
-
-
-#### 6.5. Biểu đồ thực nghiệm trên ba môi trường
-
-Các hình dưới đây được tổng hợp từ thực nghiệm
-MAIC, MASAC và MADDPG trên 10 seed (42–51).
-
-##### 6.5.1. Multi-Target 16×16
-
-Biểu đồ phần thưởng huấn luyện và số trạng thái
-được khám phá.
-
-![Learning curves Multi-Target](reports/curves_MTE16.png)
-
-##### 6.5.2. PushBox 16×16
-
-Biểu đồ so sánh quá trình huấn luyện của
-các thuật toán đối chứng.
-
-![Learning curves PushBox](reports/curves_PushBox16.png)
-
-##### 6.5.3. PassSparse 16×16
-
-Biểu đồ thể hiện kết quả khám phá và phần thưởng
-trên nhiệm vụ phối hợp mở cửa.
-
-Không có GIF thành công của chính sách MAIC trên
-PassSparse16 được công bố trong mục này.
-
-![Learning curves PassSparse](reports/curves_PassSparse16.png)
-
-#### 6.6. Phân tích tác động của Exact KL
-
-##### 6.6.1. Đường học trên PushBox16
-
-So sánh MAIC, MASAC, MAIC + Exact KL và
-MASAC + Exact KL.
-
-Các đường biểu diễn trung bình qua 10 seed,
-với trung bình trượt 100 episode và dải
-biến thiên một độ lệch chuẩn.
-
-![Exact KL learning curves](reports/figures/exactkl_pushbox16_learning.png)
-
-##### 6.6.2. Số seed duy trì reward dương
-
-Số seed có reward trung bình lớn hơn 0
-trong 500 episode huấn luyện cuối cùng.
-
-![Exact KL positive reward seeds](reports/figures/exactkl_pushbox16_seeds.png)
-
-
-### 7. Cấu trúc mã nguồn
-
-- third_party/MAIC/: mã nguồn MAIC kế thừa.
-- baselines/: thuật toán đối chứng bổ sung.
-- tools/: công cụ huấn luyện, đánh giá và thống kê.
-- configs/: cấu hình thực nghiệm.
-- patches/: những điều chỉnh mã nguồn.
-- reports/: kết quả thực nghiệm.
-- docs/: tài liệu nghiên cứu.
-
-### 8. Hạn chế
-
-Kết quả có thể nhạy với random seed, mất ổn định trong quá trình
-huấn luyện và chưa chứng minh khả năng khái quát hóa trên mọi
-cấu hình môi trường.
-
-Việc tăng kích thước lưới không nhất thiết làm tăng độ phức tạp
-phối hợp giữa các tác tử.
-
-### 9. Ghi nhận
-
-Dự án ghi nhận đóng góp của Hoàng Văn Phi đối với mã nguồn
-MAIC ban đầu và các tác giả của những thuật toán liên quan.
-
-Việc phân phối mã nguồn kế thừa phải tuân thủ quyền sử dụng
-của tác giả gốc.
+The upstream MAIC code and associated concepts belong to their respective authors. Baseline names in this repository refer to the documented implementation configurations. This repository is a research artifact and does not claim a new general theoretical guarantee for exact KL regularization. Please consult the upstream licensing and attribution terms before redistributing inherited code.

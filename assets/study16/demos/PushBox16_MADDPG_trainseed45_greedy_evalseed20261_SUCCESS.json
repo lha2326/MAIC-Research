@@ -1,0 +1,14 @@
+{
+  "env": "PushBox16",
+  "algo": "MADDPG",
+  "train_seed": 45,
+  "checkpoint": "/workspace/MAIC-Research/runs_study16/PushBox16/MADDPG/seed45/model_final.pth",
+  "mode": "greedy",
+  "eval_seed": 20261,
+  "success": true,
+  "reward": 100.0,
+  "steps": 9,
+  "source": "actual policy rollout; NOT a scripted demonstration",
+  "gif": "/workspace/MAIC-Research/reports_study16/videos/PushBox16_MADDPG_trainseed45_greedy_evalseed20261_SUCCESS.gif",
+  "mp4": "/workspace/MAIC-Research/reports_study16/videos/PushBox16_MADDPG_trainseed45_greedy_evalseed20261_SUCCESS.mp4"
+}
