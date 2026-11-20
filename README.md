@@ -1,4 +1,4 @@
-# Khảo sát điều chuẩn chính sách bằng phân kỳ KL trong học tăng cường đa tác tử hợp tác
+# Đánh giá ảnh hưởng của cơ chế điều chuẩn phân kỳ Kullback–Leibler đến hiệu quả học chính sách trong học tăng cường đa tác tử hợp tác
 
 **Nghiên cứu đối chứng MAIC và Exact KL trên ba môi trường 16 × 16**
 
@@ -16,7 +16,7 @@ Mã nguồn gốc: [Hoàng Văn Phi – MAIC](https://github.com/hoangvanphi2004
 - **RQ2 — Tác động của information gain:** hiệu ứng của Exact KL có giống nhau ở MAIC và MASAC (không dùng IG) hay không?
 - **RQ3 — Tính ổn định và giới hạn:** kết quả có nhất quán giữa các seed, checkpoint và chế độ chọn hành động greedy/stochastic không? Đa dạng trạng thái có gắn với thành công của nhiệm vụ hợp tác không?
 
-## 2. Thiết kế thực nghiệm chính — Study16
+## 2. Thiết kế thực nghiệm chính
 
 | Thành phần | Thiết lập |
 |:--|:--|
@@ -64,29 +64,80 @@ Các tham số dưới đây được lấy từ `train_config.json` của **com
 
 `COMA_Phi` chỉ là tên cấu hình thí nghiệm từ mã MAIC khi tắt IG và entropy, **không đồng nhất với COMA on-policy nguyên bản**. Tất cả các cấu hình MAIC và Exact KL sử dụng cùng định nghĩa môi trường, được kiểm tra bằng cách đối chiếu các tệp môi trường trong script chuẩn bị.
 
-## 3. Phương pháp: từ KL surrogate tới Exact KL
+## 3. Cơ sở toán học và thay đổi trong hàm mục tiêu Actor
 
-Với chính sách phân tích theo tác tử:
+Nghiên cứu xem xét cách thức thành phần điều chuẩn Kullback–Leibler (KL) tham gia vào cập nhật chính sách trong MAIC. Kiến trúc Actor–Critic, counterfactual advantage và cơ chế ước lượng information gain được giữ nguyên giữa hai cấu hình MAIC so sánh.
 
-```math
-\pi_{\theta}(\mathbf{a}\mid\mathbf{o})=\prod_{i=1}^{n}\pi_{\theta_i}(a_i\mid o_i).
-```
+### 3.1. Chính sách đa tác tử
 
-Trong MAIC gốc, đóng góp KL vào cập nhật Actor được biểu diễn bằng **hệ số surrogate từ hành động lấy mẫu** có thao tác dừng gradient ở hệ số. Biến thể Exact KL dùng tổng trên **toàn bộ hành động rời rạc** của mỗi tác tử tại quan sát tương ứng:
+Với $n$ tác tử có chính sách phân tán, phân phối hành động chung được phân tích thành
 
-```math
-D_i(o_i;\theta_i)=\sum_{a_i\in\mathcal A_i}\pi_{\theta_i}(a_i\mid o_i)\log\frac{\pi_{\theta_i}(a_i\mid o_i)}{\pi_{\mathrm{old},i}(a_i\mid o_i)}.
-```
+$$
+\pi_{\theta}(\mathbf{a}\mid\mathbf{o})
+=\prod_{i=1}^{n}\pi_{\theta_i}(a_i\mid o_i).
+$$
 
-Hạng KL được cộng trực tiếp vào hàm mất mát Actor, với chính sách cũ được cố định gradient:
+### 3.2. Thành phần KL theo hàm thay thế trong MAIC gốc
 
-```math
-\mathcal L_{\mathrm{Actor}}^{\mathrm{ExactKL}}=\sum_i\mathbb E_{\mathcal B}\left[\operatorname{sg}(g_i^{\mathrm{base}})\log\pi_{\theta_i}(a_i\mid o_i)\right]+\lambda\sum_i\mathbb E_{\mathcal B}\left[D_i(o_i;\theta_i)\right].
-```
+Đặt $\ell_{\theta}=\sum_{j=1}^{n}\log\pi_{\theta_j}(a_j\mid o_j)$ và $\ell_{\mathrm{old}}$ là tổng log-xác suất dưới chính sách tham chiếu. Hệ số cập nhật trong mã MAIC gốc bao gồm thành phần KL theo hàm thay thế:
 
-Đây là thay đổi **cách tối ưu hóa chính sách**; không thay thế information gain, counterfactual advantage hoặc mạng Actor–Critic. Dữ liệu replay là off-policy, vì vậy biểu thức trên không tạo ra bảo đảm đơn điệu cải thiện chính sách. Mô tả đầy đủ các thành phần: [Phương pháp nghiên cứu](docs/study16/METHOD.md).
+$$
+\begin{aligned}
+g_i^{\mathrm{sur}}={}&(\alpha_1c_H+\lambda)(\ell_{\theta}+1)\\
+&-\lambda\ell_{\mathrm{old}}-\widehat A_i-\alpha_2c_I\widehat I.
+\end{aligned}
+$$
 
-## 4. Kết quả thực nghiệm chính — 90 run × 10.000 episode
+Hàm mất mát Actor sử dụng hệ số đã dừng gradient:
+
+$$
+\mathcal L_{\mathrm{sur}}
+=\sum_{i=1}^{n}\mathbb E_{\mathcal B}
+\left[\mathrm{sg}(g_i^{\mathrm{sur}})\log\pi_{\theta_i}(a_i\mid o_i)\right].
+$$
+
+Trong đó, $\mathrm{sg}$ là toán tử dừng gradient, $\widehat A_i$ là counterfactual advantage, $\widehat I$ là information gain ước lượng, $\alpha_1$ và $\alpha_2$ là hệ số entropy và information gain, còn $c_H,c_I$ là các hệ số điều khiển tương ứng. Ký hiệu $\lambda$ biểu diễn hệ số KL. Phép tính KL trên toàn phân phối hành động có thể xuất hiện trong quá trình ghi log của mã gốc, nhưng thành phần cập nhật Actor sử dụng biểu thức surrogate ở trên.
+
+### 3.3. Điều chuẩn KL trực tiếp trên phân phối hành động rời rạc
+
+Ở quan sát $o_i$, phân kỳ KL của toàn bộ phân phối hành động có dạng
+
+$$
+D_i(o_i;\theta_i)
+=\sum_{a_i\in\mathcal A_i}
+\pi_{\theta_i}(a_i\mid o_i)
+\log\frac{\pi_{\theta_i}(a_i\mid o_i)}{\pi_{\mathrm{old},i}(a_i\mid o_i)}.
+$$
+
+Hệ số cơ sở sau khi loại bỏ thành phần KL theo hàm thay thế là
+
+$$
+g_i^{\mathrm{base}}=\alpha_1c_H(\ell_{\theta}+1)
+-\widehat A_i-\alpha_2c_I\widehat I.
+$$
+
+Hàm mất mát Actor của biến thể Exact KL được phân tách thành
+
+$$
+\mathcal L_{\mathrm{Actor}}^{\mathrm{ExactKL}}
+=\mathcal L_{\mathrm{base}}+\lambda\mathcal L_{\mathrm{KL}},
+$$
+
+$$
+\mathcal L_{\mathrm{base}}=\sum_{i=1}^{n}\mathbb E_{\mathcal B}
+\left[\mathrm{sg}(g_i^{\mathrm{base}})\log\pi_{\theta_i}(a_i\mid o_i)\right],
+$$
+
+$$
+\mathcal L_{\mathrm{KL}}=\sum_{i=1}^{n}\mathbb E_{\mathcal B}
+\left[D_i(o_i;\theta_i)\right].
+$$
+
+Trong hạng KL cuối, gradient lan truyền trực tiếp theo chính sách hiện tại, còn chính sách tham chiếu được cố định. Thay đổi này **không thay thế bộ ước lượng information gain** hoặc cấu trúc MAIC. Vì các quan sát được lấy từ replay buffer ngoài chính sách, biểu thức trên không mặc nhiên bảo đảm cải thiện đơn điệu hay ràng buộc trust region theo nghĩa lý thuyết.
+
+Mô tả chi tiết về thiết kế đối chứng và công thức được lưu tại [tài liệu phương pháp](docs/study16/METHOD.md).
+
+## 4. Kết quả thực nghiệm chính
 
 Bảng dưới trình bày **tỷ lệ hoàn thành nhiệm vụ (%) tại checkpoint cuối**, là trung bình qua 5 seed huấn luyện. Dấu `±` biểu diễn độ lệch chuẩn giữa 5 seed (*population SD*).
 
@@ -101,7 +152,7 @@ Bảng dưới trình bày **tỷ lệ hoàn thành nhiệm vụ (%) tại check
 
 [Toàn bộ bảng kết quả 18 cấu hình](docs/study16/KET_QUA_TV.md) · [CSV của 90 run](results/study16/per_seed_values.csv) · [Bảng trung bình và SD](results/study16/summary.csv)
 
-### 4.1. Multi-Target (MTE16): tác động phụ thuộc chế độ đánh giá
+### 4.1. Multi-Target (MTE16) và sự phụ thuộc vào chế độ đánh giá
 
 MAIC + Exact KL có tỷ lệ thành công **greedy tăng từ 9,8% lên 25,6%**, tương ứng chênh lệch **+15,8 điểm phần trăm**. Trái lại, ở chế độ **stochastic**, tỷ lệ thành công giảm từ 41,4% xuống 37,8% (−3,6 điểm phần trăm). Do đó, không thể kết luận Exact KL luôn nâng cao hiệu quả MAIC trên MTE16.
 
@@ -115,7 +166,7 @@ MAIC + Exact KL có tỷ lệ thành công **greedy tăng từ 9,8% lên 25,6%**
 
 *Hình 2. So sánh theo cặp giữa cấu hình gốc và Exact KL trên cùng seed huấn luyện. Các đường mảnh thể hiện từng seed và đường đậm thể hiện trung bình.*
 
-### 4.2. PushBox16: tác động rõ trong nhóm MAIC
+### 4.2. PushBox16 và sự khác biệt giữa các cấu hình MAIC
 
 MAIC gốc có tỷ lệ hoàn thành nhiệm vụ bằng **0% tại cả 5 seed**, trong khi MAIC + Exact KL có **3/5 seed thành công hoàn toàn** (seed 44, 45 và 46) và 2/5 seed thất bại (seed 42 và 43). Giá trị trung bình của năm seed là **60%**, không có nghĩa một chính sách đơn lẻ thành công 60%. MADDPG cũng đạt 60% nhưng các seed thành công không trùng hoàn toàn với MAIC + Exact KL.
 
@@ -129,7 +180,7 @@ Reward trung bình trên 10% episode cuối: **MAIC = 0**, **MAIC + Exact KL = 5
 
 *Hình 4. Phần thưởng trung bình của 10% episode huấn luyện cuối theo từng thuật toán và seed.*
 
-### 4.3. PassSparse16: giới hạn giữa đa dạng trạng thái và phối hợp
+### 4.3. PassSparse16 và giới hạn của khám phá trạng thái
 
 Tất cả sáu cấu hình có tỷ lệ hoàn thành nhiệm vụ bằng **0%** tại checkpoint cuối (cả greedy và stochastic). Tuy nhiên, MAIC + Exact KL ghi nhận **20.669 ± 18.516** trạng thái duy nhất vào cuối huấn luyện, so với **582 ± 106** của MAIC gốc. MADDPG ghi nhận **34.506 ± 1.978**, nhưng cũng không hoàn thành nhiệm vụ.
 
@@ -159,6 +210,9 @@ Các đường học theo episode và hình đánh giá checkpoint chỉ sử d�
 <!-- STUDY16_TRAINING_FIGURES_END -->
 
 **Lưu ý thống kê:** số lượng seed còn nhỏ (n = 5). Các chênh lệch trung bình, đường học và ví dụ rollout là kết quả mô tả; chúng không chứng minh tính ưu việt tổng quát, cơ chế nhân quả hay khả năng khái quát trên môi trường chưa kiểm tra.
+
+
+Phân tích sai khác theo seed, độ phân tán và các giả thuyết cần kiểm chứng được trình bày tại [phân tích chi tiết Study16](docs/study16/PHAN_TICH_THEO_SEED.md).
 
 ## 5. Video mô phỏng từ checkpoint đã huấn luyện
 
@@ -239,11 +293,15 @@ python3 study16_pipeline.py summarize
 
 ## 8. Dữ liệu, checkpoint và trạng thái công bố
 
-Hiện repository chứa bảng kết quả, hình nghiên cứu và 5 video. Toàn bộ checkpoint cuối/trung gian và raw log nằm ngoài lịch sử Git thông thường vì dung lượng lớn. **Không khẳng định checkpoint đã có trên GitHub Release khi chưa có Release được xác nhận.** Để lưu trữ toàn bộ, cần tạo archive có SHA-256, tải lên GitHub Release hoặc kho lưu trữ ngoài rồi bổ sung đường dẫn kiểm chứng tại đây.
+Repository lưu bảng kết quả của 90 run, biểu đồ và năm bộ GIF/MP4/JSON từ checkpoint cuối. Toàn bộ checkpoint cuối/trung gian và raw log nằm ngoài lịch sử Git thông thường vì dung lượng lớn. **Không khẳng định checkpoint đã có trên GitHub Release khi chưa có Release được xác nhận.** Để lưu trữ toàn bộ, cần tạo archive có SHA-256, tải lên GitHub Release hoặc kho lưu trữ ngoài rồi bổ sung đường dẫn kiểm chứng tại đây.
 
 Các kết luận giới hạn trong ba môi trường 16 × 16, seed 42–46, 10.000 episode và các cấu hình đã triển khai. Kết quả chưa chứng minh tính ổn định tổng quát hoặc vượt trội có ý nghĩa thống kê của Exact KL.
 
 ## 9. Tài liệu liên quan
+
+- [Danh mục dữ liệu và checkpoint](docs/study16/LUU_TRU_DU_LIEU.md)
+- [Phân tích chi tiết kết quả theo seed](docs/study16/PHAN_TICH_THEO_SEED.md)
+- [Thư viện hình và video mô phỏng](docs/study16/FIGURES_AND_DEMOS.md)
 
 - [Kết quả chi tiết tiếng Việt](docs/study16/KET_QUA_TV.md)
 - [Kết quả và thảo luận tiếng Anh](docs/study16/RESULTS_EN.md)

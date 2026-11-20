@@ -1,19 +1,50 @@
-# Study16 — Reproducibility
+# Thiết lập và tái lập thực nghiệm Study16
 
-## Fixed experiment matrix
+## 1. Phạm vi
 
-- MTE16: `MultiGrid-MultiTargetEmpty-16x16-v0`
-- PushBox16: `MultiGrid-PushBox-16x16-v0`
-- PassSparse16: `MultiGrid-PassSparse-16x16-v0`
-- Algorithms: `MAIC`, `MAIC_ExactKL`, `MASAC`, `MASAC_ExactKL`, `MADDPG`, `COMA_Phi`.
-- Training seeds: 42, 43, 44, 45, 46.
-- 10,000 episodes, 40 environment steps per episode, 2 agents.
-- Final evaluation: 100 episodes per seed per mode (greedy and stochastic), with evaluation seed base 20260.
-- Original MAIC pinned source revision: `ded6164f99742db4769a7f05b45f6e6007ff8b1a`.
+| Thuộc tính | Thiết lập |
+|:--|:--|
+| Môi trường | `MultiGrid-MultiTargetEmpty-16x16-v0`, `MultiGrid-PushBox-16x16-v0`, `MultiGrid-PassSparse-16x16-v0` |
+| Số tác tử | 2 |
+| Kích thước | 16 × 16 |
+| Horizon | 40 bước/episode |
+| Thuật toán | MAIC, MAIC + Exact KL, MASAC, MASAC + Exact KL, MADDPG, COMA_Phi |
+| Seed huấn luyện | 42–46 |
+| Episode huấn luyện | 10.000/run |
+| Số run | 90 |
+| Checkpoint trung gian | Mỗi 500 episode |
+| Đánh giá cuối | 100 episode mỗi seed và mỗi chế độ greedy/stochastic |
+| Eval seed gốc | 20260 |
+| Số JSON đánh giá cuối | 180 |
 
-## Environment setup
+## 2. Siêu tham số MAIC và các biến thể
 
-Use the existing `requirements.txt` and the original pinned MAIC code. The pipeline expects the original source repository at `source_maic/` and the Exact-KL source at `variants/exactkl/`; this intentionally separates the two implementations.
+Theo cấu hình từ revision MAIC gốc `ded6164f99742db4769a7f05b45f6e6007ff8b1a` và phần điều chỉnh trong pipeline Study16:
+
+| Tham số | Giá trị |
+|:--|--:|
+| `replay_size` | 100000 |
+| `batch_size` | 1024 |
+| `start_steps` | 100 |
+| `hidden_dim` | 128 |
+| `lr` | 0.0003 |
+| `gamma` | 0.99 |
+| `tau` | 0.02 |
+| `alpha1` khởi tạo | 0.02 |
+| `alpha2` khởi tạo | 0.02 |
+| `alpha_kl` | 1.0 |
+| `policy_update_steps` | 3 |
+| `auto_entropy_tuning` | True |
+| `target_entropy_scale` | 0.2 |
+| `obs_state_mode` | simple |
+| `steps_per_update` | 1 |
+| `updates_num` | 1 |
+
+**Giới hạn:** Không suy diễn tất cả siêu tham số này sang MADDPG; cấu hình thực tế của mỗi run cần được đối chiếu với `runs_study16/<env>/<algo>/seed<seed>/config.json` và `run_meta.json`. Không lấy siêu tham số khác trong luận văn thay cho cấu hình đã chạy.
+
+## 3. Chuẩn bị môi trường
+
+Trên một máy mới có Python, các thư viện phù hợp và GPU được hỗ trợ, từ thư mục gốc của repository:
 
 ```bash
 git clone https://github.com/hoangvanphi2004/MAIC source_maic
@@ -24,9 +55,9 @@ python3 study16_pipeline.py prepare
 python3 study16_pipeline.py status
 ```
 
-Verify the version and dependencies for your environment before beginning any repeat training. Saved per-run `config.json` and `run_meta.json` are the source of truth for hyperparameters; do not infer hyperparameters from a thesis or an earlier trial.
+Bản mã Exact KL được lưu riêng tại `variants/exactkl/`; mã gốc nằm trong `source_maic/`. Không thay mã gốc bằng biến thể khi chạy đối chứng.
 
-## Training and evaluation commands
+## 4. Huấn luyện và đánh giá
 
 ```bash
 python3 study16_pipeline.py train --jobs 2
@@ -35,32 +66,22 @@ python3 study16_pipeline.py eval --jobs 2
 python3 study16_pipeline.py summarize
 ```
 
-**Warning:** Partial checkpoints contain weights only, not all replay and optimizer state. `train --retry-failed` moves incomplete runs into `backups_study16_partial` and restarts them from episode 0 rather than continuing the exact training state.
+Chỉ huấn luyện lại khi có chủ đích. Lệnh `train --retry-failed` di chuyển run chưa hoàn thành vào thư mục backup rồi bắt đầu lại từ episode 0; nó **không resume chính xác** checkpoint dở.
 
-## Figure regeneration
+## 5. Tái tạo hình
 
 ```bash
 python3 -m pip install pandas numpy matplotlib
-python3 scripts/study16/redraw_study16_journal.py \
+python3 scripts/study16/plot_study16_color.py \
   --csv results/study16/per_seed_values.csv \
   --runs runs_study16 \
   --out assets/study16/figures
 ```
 
-Figures at final checkpoints regenerate from 90-row CSV data. Learning curves and checkpoint-wise comparisons require original run-level history/evaluation JSON; if unavailable, the script marks those figures as missing instead of inventing intermediate results.
+Hình cuối kỳ có thể dựng từ CSV 90 run. Đường học và đồ thị độ ổn định checkpoint phải lấy từ bản JSON huấn luyện/đánh giá tương ứng; nếu thiếu JSON thì không tự suy diễn số liệu.
 
-## Artifacts, archiving and provenance
+## 6. Minh họa và số liệu kiểm chứng
 
-The Git repository contains code, summary tables, figures and selected small rollout demos. Large raw checkpoints and training logs should remain outside ordinary Git history and may be stored as verified GitHub Release assets. Never state that the complete raw archive is available until a Release asset listing has been checked.
+Các video trong [`assets/study16/demos`](../../assets/study16/demos) mô tả từng episode. Chúng không thay thế đánh giá qua nhiều episode và không được sử dụng làm bằng chứng thống kê độc lập. File `source_maic/refactor/inference.mp4` là video mã nguồn gốc, không phải video Study16.
 
-The Git repo's existing `.gitignore` excludes `.pth`, `.pt`, `.ckpt`, raw `runs_*`, and `.mp4` files. The update script preserves these exclusions, and therefore does not silently push multi-gigabyte checkpoints. A separate publisher is required for full archive upload.
-
-A selected policy-demo GIF is only an example from one checkpoint and evaluation episode, not a statistically representative measure of average performance. Do not represent scripted control trajectories as learned-policy rollouts.
-
-## Known research limitations
-
-- Results are based on five training seeds, so uncertainty is substantial.
-- Success metrics are based on the implementation's termination logic; environment-level success semantics should be audited against task definitions.
-- Recorded unique-state counts depend on logging code and may not reflect actual useful exploration.
-- Intermediate checkpoint statistics must use actual evaluation records for all compared seeds.
-- Expanded 24×24 and 32×32 claims belong to separate experiments and are not included in this completed Study16 summary.
+Thống kê theo seed và hướng kiểm chứng thêm được trình bày tại [phân tích nghiên cứu](PHAN_TICH_THEO_SEED.md). Checkpoint gốc và log cần lưu trữ riêng theo [hướng dẫn lưu trữ](LUU_TRU_DU_LIEU.md).
