@@ -250,20 +250,7 @@ Các GIF dưới đây chạy trực tiếp trong README GitHub. Mỗi video là
 
 Các video trên được tạo từ chính sách đã học, không sử dụng bộ điều khiển được lập trình sẵn để minh họa thành công của tác tử. File `source_maic/refactor/inference.mp4` không được coi là một video kiểm nghiệm của Study16.
 
-## 6. Các thực nghiệm trước đây và phân tích lịch sử
-
-Để bảo đảm khả năng truy vết, **các kết quả trước Study16 vẫn được giữ riêng và không gộp vào bảng 90 run**. Bản README trước lần cập nhật 20/11 được lưu nguyên văn ở [README lịch sử ngày 12/11/2026](docs/history/README_20261112.md), bao gồm giải thích công thức KL, các lần thử nghiệm pilot, đồ thị và video của checkpoint cũ.
-
-| Giai đoạn | Phạm vi | Vai trò |
-|:--|:--|:--|
-| Tái hiện MAIC/MASAC/MADDPG | 10 seed 42–51, 5.000 episode | Khảo sát đầu tiên và xác định khó khăn khi phối hợp |
-| Đối chứng COMA_Phi | 10 seed, 5.000 episode | Tham chiếu cấu hình không IG/entropy |
-| Exact KL pilot trên PushBox16 | 10 seed, checkpoint trung gian | Kiểm tra suy giảm chính sách và reward theo seed |
-| **Study16 hiện tại** | **5 seed 42–46, 10.000 episode, 90 run** | **Bộ thực nghiệm chính dùng cho bài báo** |
-
-Dữ liệu và hình của các giai đoạn cũ được lưu tại [reports/](reports/), [reports_stage_b/](reports_stage_b/), [reports_mte16_10seeds/](reports_mte16_10seeds/) và [assets/demos/](assets/demos/). Một số minh họa cũ sử dụng seed 51/checkpoint episode 2.000, do đó **không được trình bày như checkpoint cuối 10.000 episode**.
-
-## 7. Mã nguồn và tái lập
+## 6. Mã nguồn và tái lập
 
 ```text
 study16_pipeline.py                Bộ điều phối 90 run / đánh giá / tổng hợp
@@ -291,13 +278,13 @@ python3 study16_pipeline.py summarize
 
 **Không dùng `train --retry-failed` để tiếp tục một run dở nếu cần khôi phục chính xác**: checkpoint `.pth` hiện không chứa đầy đủ replay buffer và optimizer state. Hướng dẫn cụ thể: [Thiết lập Study16](SETUP_STUDY16.md) · [Khả năng tái lập](docs/study16/REPRODUCIBILITY.md).
 
-## 8. Dữ liệu, checkpoint và trạng thái công bố
+## 7. Dữ liệu, checkpoint và trạng thái công bố
 
 Repository lưu bảng kết quả của 90 run, biểu đồ và năm bộ GIF/MP4/JSON từ checkpoint cuối. Toàn bộ checkpoint cuối/trung gian và raw log nằm ngoài lịch sử Git thông thường vì dung lượng lớn. **Không khẳng định checkpoint đã có trên GitHub Release khi chưa có Release được xác nhận.** Để lưu trữ toàn bộ, cần tạo archive có SHA-256, tải lên GitHub Release hoặc kho lưu trữ ngoài rồi bổ sung đường dẫn kiểm chứng tại đây.
 
 Các kết luận giới hạn trong ba môi trường 16 × 16, seed 42–46, 10.000 episode và các cấu hình đã triển khai. Kết quả chưa chứng minh tính ổn định tổng quát hoặc vượt trội có ý nghĩa thống kê của Exact KL.
 
-## 9. Tài liệu liên quan
+## 8. Tài liệu liên quan
 
 - [Danh mục dữ liệu và checkpoint](docs/study16/LUU_TRU_DU_LIEU.md)
 - [Phân tích chi tiết kết quả theo seed](docs/study16/PHAN_TICH_THEO_SEED.md)
@@ -307,7 +294,6 @@ Các kết luận giới hạn trong ba môi trường 16 × 16, seed 42–46, 1
 - [Kết quả và thảo luận tiếng Anh](docs/study16/RESULTS_EN.md)
 - [Phương pháp và cơ sở toán học](docs/study16/METHOD.md)
 - [Hình và diễn giải video](docs/study16/FIGURES_AND_DEMOS.md)
-- [README lịch sử trước đợt cập nhật](docs/history/README_20261112.md)
 - [Mã MAIC gốc và tác giả gốc](https://github.com/hoangvanphi2004/MAIC)
 
 **Ghi nhận:** mã MAIC gốc và các thành phần kế thừa phải được trích dẫn, sử dụng và phân phối theo điều khoản của tác giả tương ứng. Các baseline được nêu theo đúng cấu hình triển khai, không đồng nhất với mọi biến thể trong tài liệu gốc.
